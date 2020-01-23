@@ -1,7 +1,10 @@
 library(shiny)
+library(ggplot2)
+library(maps)
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-df <- read.csv("europe.csv")
+
+
+
 
 ui <- fluidPage(
   
@@ -13,45 +16,57 @@ ui <- fluidPage(
     
     # Sidebar panel for inputs ----
     sidebarPanel(
-      
-      # Input: Slider for the number of bins ----
-      sliderInput(inputId = "bins",
-                  label = "Number of bins:",
-                  min = 1,
-                  max = 50,
-                  value = 30)
-      
+      sidebarPanel(
+        selectInput('var', 'Select variable', names(df))
+      )
     ),
     
     # Main panel for displaying outputs ----
     mainPanel(
       
       # Output: Histogram ----
-      plotOutput(outputId = "distPlot")
+      plotOutput(outputId = "map")
       
     )
   )
 )
+
+
 # Define server logic required to draw a histogram ----
 server <- function(input, output) {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
   
-  # Histogram of the Old Faithful Geyser Data ----
-  # with requested number of bins
-  # This expression that generates a histogram is wrapped in a call
-  # to renderPlot to indicate that:
-  #
-  # 1. It is "reactive" and therefore should be automatically
-  #    re-executed when inputs (input$bins) change
-  # 2. Its output type is a plot
-  output$distPlot <- renderPlot({
-    
-    x    <- df$GDP
-    bins <- seq(min(x), max(x), length.out = input$bins + 1)
-    
-    hist(x, breaks = bins, col = "#75AADB", border = "white",
-         xlab = "Hello",
-         main = "eaddjadj")
-    
+  df <- read.csv("europe.csv")
+  world <- map_data("world")
+  worldmap <- ggplot() + theme(
+    panel.background = element_rect(fill = "white",
+                                    color = NA),
+    panel.grid = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  )
+  europe <- worldmap + coord_fixed(xlim = c(-20, 42.5),
+                                   ylim = c(36, 70.1),
+                                   ratio = 1.5)
+  
+  joinMap <- full_join(df, world, by = c("Country" = "region"))
+  
+  
+  output$map <- renderPlot({
+    symbol <- sym(input$var)
+    europe2 <-
+      europe + geom_polygon(data = joinMap,
+                          aes(
+                              fill = !! symbol,
+                              x = long,
+                              y = lat,
+                              group = group
+                            ),
+                            color = "grey70")
+    plot(europe2)
   })
   
 }
