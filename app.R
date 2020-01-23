@@ -65,7 +65,17 @@ server <- function(input, output) {
                               y = lat,
                               group = group
                             ),
-                            color = "grey70")
+                            color = "grey70") + 
+              scale_fill_viridis(
+              option = "plasma",
+              direction = -1,
+              name = "",
+              na.value = "grey80",
+              guide = guide_colorbar(
+                barheight = unit(140, units = "mm"),
+                barwidth = unit(6, units = "mm")
+              )
+            )
     plot(europe2)
   })
   
